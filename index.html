@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>母親節快樂</title>
+  <title></title>
   <style>
     html, body {
       margin: 0;
@@ -101,8 +101,8 @@
 <body>
   <div id="container">
     <canvas id="flowerCanvas" width="400" height="400"></canvas>
-    <div id="message" class="message">媽媽，母親節快樂！<br>謝謝妳每天的付出與愛 💐</div>
-    <button id="restartBtn" onclick="restart()">重新開始</button>
+    <div id="message" class="message"></div>
+    <button id="restartBtn" onclick="restart()"></button>
   </div>
 
   <script>
@@ -110,6 +110,12 @@
     const ctx = canvas.getContext('2d');
     const message = document.getElementById('message');
     const restartBtn = document.getElementById('restartBtn');
+
+    window.onload = () => {
+      message.innerHTML = "媽媽，母親節快樂！<br>謝謝妳每天的付出與愛 💐";
+      restartBtn.textContent = "重新開始";
+    };
+
 
     let bloomProgress = 0;
     let hasBloomed = false;
@@ -270,15 +276,15 @@
         heart.style.left = (rect.left + 180 + Math.random() * 40) + 'px';
         heart.style.top = (rect.top + 50) + 'px';
         document.body.appendChild(heart);
-        setTimeout(() => heart.remove(), 3000);
+        setTimeout(() => heart.remove(), 800);
       };
 
       let count = 0;
       let heartInterval = setInterval(() => {
         createHeart();
         count++;
-        if (count >= 20) clearInterval(heartInterval);
-      }, 300);
+        if (count >= 10) clearInterval(heartInterval);
+      }, 200); // 縮短生成間隔為 200 毫秒
     }
 
     function restart() {

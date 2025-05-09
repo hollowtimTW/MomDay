@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>母親節快樂</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: linear-gradient(#fff5f7, #ffe3ec);
+      font-family: 'Segoe UI', sans-serif;
+      overflow: hidden;
+    }
+
+    #container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    canvas {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      cursor: pointer;
+    }
+
+    .message, #restartBtn {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+    }
+
+    .message {
+      top: 70%;
+      font-size: 1.6rem;
+      opacity: 0;
+      transition: opacity 1s ease-in;
+      color: #c2185b;
+    }
+
+    .show {
+      opacity: 1;
+    }
+
+    #restartBtn {
+      top: 80%;
+      padding: 10px 20px;
+      font-size: 1rem;
+      background-color: #f06292;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.3s;
+      display: none;
+    }
+
+    #restartBtn:hover {
+      background-color: #ec407a;
+    }
+
+    .heart {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: #f06292;
+      transform: rotate(45deg);
+      animation: float 2s ease-out forwards;
+    }
+
+    .heart::before,
+    .heart::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: #f06292;
+      border-radius: 50%;
+    }
+
+    .heart::before { top: -10px; left: 0; }
+    .heart::after  { left: -10px; top: 0; }
+
+    @keyframes float {
+      0% { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-120px) scale(1.8); }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
+      25% { transform: translate(-50%, -50%) rotate(2deg); }
+      50% { transform: translate(-50%, -50%) rotate(-2deg); }
+      75% { transform: translate(-50%, -50%) rotate(1deg); }
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <canvas id="flowerCanvas" width="400" height="400"></canvas>
+    <div id="message" class="message">媽媽，母親節快樂！<br>謝謝妳每天的付出與愛 💐</div>
+    <button id="restartBtn" onclick="restart()">重新開始</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('flowerCanvas');
+    const ctx = canvas.getContext('2d');
+    const message = document.getElementById('message');
+    const restartBtn = document.getElementById('restartBtn');
+
+    let bloomProgress = 0;
+    let hasBloomed = false;
+    let stemShrink = 1;
+
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2 + 50;
+
+    function drawLeaf(x, y, angle, scale) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      ctx.scale(scale, scale);
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.quadraticCurveTo(20, -10, 0, -40);
+      ctx.quadraticCurveTo(-20, -10, 0, 0);
+      ctx.fillStyle = '#81c784';
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawStem(x, y, height, scale) {
+      ctx.save();
+      ctx.globalAlpha = scale;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x, y + height * scale);
+      ctx.strokeStyle = '#388e3c';
+      ctx.lineWidth = 5;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawPetal(x, y, r, angle, factor) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      ctx.beginPath();
+
+      const numCurves = 5;
+      const curveHeight = r * factor / numCurves;
+
+      for (let i = 0; i < numCurves; i++) {
+        const curveOffset = i * 6;
+        ctx.quadraticCurveTo(r / 4 + curveOffset, -curveHeight, 0, -curveHeight * (i + 1));
+        ctx.quadraticCurveTo(-r / 4 - curveOffset, -curveHeight, 0, 0);
+      }
+
+      const gradient = ctx.createLinearGradient(0, 0, 0, -r * factor);
+      const baseHue = 340;
+      const randomLightness1 = 70 + Math.random() * 10;
+      const randomLightness2 = 50 + Math.random() * 10;
+      const color1 = `hsl(${baseHue}, 70%, ${randomLightness1}%)`;
+      const color2 = `hsl(${baseHue}, 70%, ${randomLightness2}%)`;
+      gradient.addColorStop(0, color1);
+      gradient.addColorStop(1, color2);
+
+      ctx.fillStyle = gradient;
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawPetalOnLayer(tempCtx, x, y, r, angle, factor) {
+      tempCtx.save();
+      tempCtx.translate(x, y);
+      tempCtx.rotate(angle);
+      tempCtx.beginPath();
+
+      const numCurves = 5;
+      const curveHeight = r * factor / numCurves;
+
+      for (let i = 0; i < numCurves; i++) {
+        const curveOffset = i * 6;
+        tempCtx.quadraticCurveTo(r / 4 + curveOffset, -curveHeight, 0, -curveHeight * (i + 1));
+        tempCtx.quadraticCurveTo(-r / 4 - curveOffset, -curveHeight, 0, 0);
+      }
+
+      const gradient = tempCtx.createLinearGradient(0, 0, 0, -r * factor);
+      const baseHue = 340;
+      const randomLightness1 = 70 + Math.random() * 10;
+      const randomLightness2 = 50 + Math.random() * 10;
+      const color1 = `hsl(${baseHue}, 70%, ${randomLightness1}%)`;
+      const color2 = `hsl(${baseHue}, 70%, ${randomLightness2}%)`;
+      gradient.addColorStop(0, color1);
+      gradient.addColorStop(1, color2);
+
+      tempCtx.fillStyle = gradient;
+      tempCtx.fill();
+      tempCtx.restore();
+    }
+
+    function drawFlower(progress, stemAlpha) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawStem(centerX, centerY, 120, stemAlpha);
+      drawLeaf(centerX - 15, centerY + 50, -0.6, stemAlpha);
+      drawLeaf(centerX + 15, centerY + 70, 0.8, stemAlpha);
+
+      const layers = [
+        { radius: 20, petals: 6 },
+        { radius: 35, petals: 8 },
+        { radius: 50, petals: 10 },
+        { radius: 65, petals: 12 },
+        { radius: 80, petals: 14 },
+      ];
+
+      // 從外圈到內圈繪製花瓣
+      layers.slice().reverse().forEach(layer => {
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = canvas.width;
+        tempCanvas.height = canvas.height;
+        const tempCtx = tempCanvas.getContext('2d');
+
+        for (let i = 0; i < layer.petals; i++) {
+          const angle = (i * Math.PI * 2) / layer.petals;
+          drawPetalOnLayer(tempCtx, centerX, centerY, layer.radius, angle, progress);
+        }
+
+        ctx.drawImage(tempCanvas, 0, 0);
+      });
+
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 12, 0, Math.PI * 2);
+      ctx.fillStyle = '#ad1457';
+      ctx.fill();
+    }
+
+    drawFlower(0.3, 1);
+
+    canvas.addEventListener('click', () => {
+      if (hasBloomed) return;
+
+      canvas.style.animation = 'shake 0.5s ease-in-out 3';
+      setTimeout(() => canvas.style.animation = '', 1500);
+
+      setTimeout(() => {
+        let interval = setInterval(() => {
+          bloomProgress = Math.min(1, bloomProgress + 0.05);
+          stemShrink = Math.max(0, stemShrink - 0.05);
+          drawFlower(bloomProgress, stemShrink);
+
+          if (bloomProgress >= 1 && stemShrink <= 0) {
+            clearInterval(interval);
+            message.classList.add('show');
+            startHeartRain();
+            hasBloomed = true;
+            restartBtn.style.display = 'block';
+          }
+        }, 60);
+      }, 1000);
+    });
+
+    function startHeartRain() {
+      const createHeart = () => {
+        const heart = document.createElement('div');
+        heart.className = 'heart';
+        const rect = canvas.getBoundingClientRect();
+        heart.style.left = (rect.left + 180 + Math.random() * 40) + 'px';
+        heart.style.top = (rect.top + 50) + 'px';
+        document.body.appendChild(heart);
+        setTimeout(() => heart.remove(), 3000);
+      };
+
+      let count = 0;
+      let heartInterval = setInterval(() => {
+        createHeart();
+        count++;
+        if (count >= 20) clearInterval(heartInterval);
+      }, 300);
+    }
+
+    function restart() {
+      bloomProgress = 0;
+      stemShrink = 1;
+      hasBloomed = false;
+      drawFlower(0.3, 1);
+      message.classList.remove('show');
+      restartBtn.style.display = 'none';
+    }
+  </script>
+</body>
+</html>
